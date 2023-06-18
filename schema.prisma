@@ -1,0 +1,20 @@
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider             = "prisma-client-py"
+  recursive_type_depth = 5
+}
+
+model Preban {
+    id           Int        @id @default(autoincrement())
+    server_id    String
+    user_id      String
+    @@unique([server_id, user_id])
+    created_by_id String
+    created_at    DateTime
+    active        Boolean   @default(true)
+    fulfilled_at  DateTime?
+}
