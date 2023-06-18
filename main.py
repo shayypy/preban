@@ -10,7 +10,6 @@ if TYPE_CHECKING:
 
 
 class Main(commands.Cog):
-    """[More info & support server](https://github.com/shayypy/preban/blob/main/README.md)"""
     def __init__(self, bot: Bot):
         self.bot = bot
 
