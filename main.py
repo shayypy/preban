@@ -1,5 +1,6 @@
 from __future__ import annotations
 import datetime
+import sys
 import traceback
 from typing import TYPE_CHECKING
 import guilded
@@ -237,5 +238,51 @@ class Main(commands.Cog):
         )
 
 
+class Errors(commands.Cog):
+    def __init__(self, bot: Bot):
+        self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx: commands.Context, error: guilded.GuildedException):
+        if hasattr(ctx.command, 'on_error'):
+            return
+
+        ignored = (commands.CommandNotFound,)
+        error = getattr(error, 'original', error)
+        if isinstance(error, ignored):
+            return
+
+        if isinstance(error, commands.NotOwner):
+            return await ctx.reply('This command is owner-only.', private=True)
+
+        elif isinstance(error, commands.MissingPermissions):
+            return await ctx.reply(f'Only people with **{error.missing_perms.join("**, **")}** permissions can run `{ctx.prefix}{ctx.command.name}`', private=True)
+
+        elif isinstance(error, commands.BotMissingPermissions):
+            return await ctx.reply(f'I need **{error.missing_perms.join("**, **")}** permissions in order to run `{ctx.prefix}{ctx.command.name}`', private=True)
+
+        elif isinstance(error, commands.BadArgument):
+            return await ctx.reply(guilded.utils.escape_mentions(str(error)), private=True)
+
+        elif isinstance(error, commands.MissingRequiredArgument):
+            return await ctx.reply(f'You are missing a required argument: `{error.param.name}`', private=True)
+
+        elif isinstance(error, guilded.Forbidden):
+            msg = 'I am missing the required permissions to do that.'
+            if error.raw_missing_permissions:
+                msg += '\n' + ('\n'.join(error.raw_missing_permissions))
+
+            return await ctx.reply(
+                msg,
+                private=True,
+            )
+
+        else:
+            await ctx.reply('An unexpected error occurred.', private=True)
+            print(f'Exception in command {ctx.command}:', file=sys.stderr)
+            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+
+
 def setup(bot: Bot):
     bot.add_cog(Main(bot))
+    bot.add_cog(Errors(bot))
