@@ -40,6 +40,9 @@ class Main(commands.Cog):
         except:
             reason = f'Preban by user with ID {entry.created_by_id}'
 
+        if entry.reason:
+            reason += f': {entry.reason}'
+
         try:
             await member.ban(reason=reason)
         except guilded.HTTPException:
@@ -66,7 +69,7 @@ class Main(commands.Cog):
     @commands.has_server_permissions(ban_members=True)
     @commands.bot_has_server_permissions(ban_members=True)
     @commands.server_only()
-    async def ban(self, ctx: commands.Context, user_id: str):
+    async def ban(self, ctx: commands.Context, user_id: str, *, reason: str = None):
         """Preban a user. You must provide the ~8 character user ID.\n\n
         Once a ban is fulfilled (a prebanned user joins the server), the user \
         **will not** be banned a second time if the ban is manually lifted by \
@@ -102,12 +105,16 @@ class Main(commands.Cog):
                     'user_id': user_id,
                     'created_at': datetime.datetime.utcnow(),
                     'created_by_id': ctx.author.id,
+                    # Guilded does not seem to actually have a limit for this value
+                    # but we set a reasonable limit anyway
+                    'reason': reason[:1000] if reason else None,
                     'active': member is None,
                     'fulfilled_at': datetime.datetime.utcnow() if member is not None else None,
                 },
                 'update': {
                     'created_at': datetime.datetime.utcnow(),
                     'created_by_id': ctx.author.id,
+                    'reason': reason[:1000] if reason else None,
                     'active': member is None,
                     'fulfilled_at': datetime.datetime.utcnow() if member is not None else None,
                 },
