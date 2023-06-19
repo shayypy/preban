@@ -81,6 +81,13 @@ class Main(commands.Cog):
             member = await ctx.server.getch_member(user_id)
         except:
             member = None
+        else:
+            if member.is_owner() or member == ctx.me:
+                await ctx.reply(
+                    'I cannot ban the server owner or myself.',
+                    silent=True,
+                )
+                return
 
         await self.bot.prisma.preban.upsert(
             where={
@@ -108,11 +115,21 @@ class Main(commands.Cog):
         )
 
         if member:
-            await member.ban(reason=f'Preban by {ctx.author.name} ({ctx.author.id})')
-            await ctx.reply(
-                'Banned this user and created a preban entry.',
-                silent=True,
-            )
+            try:
+                await member.ban(reason=f'Preban by {ctx.author.name} ({ctx.author.id})')
+            except:
+                await ctx.reply(
+                    'I created a preban entry, but I was unable to ban this '
+                    'user (they are currently a member). Please verify my '
+                    'permissions and make sure you are not attempting to '
+                    'preban a member who ranks higher than me.',
+                    silent=True,
+                )
+            else:
+                await ctx.reply(
+                    'Banned this user and created a preban entry.',
+                    silent=True,
+                )
         else:
             await ctx.reply(
                 'Prebanned this user. Make sure I do not lose the **Kick / Ban members** permission.',
